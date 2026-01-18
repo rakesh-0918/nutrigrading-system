@@ -1,0 +1,23 @@
+{
+  "name": "srujuna",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w apps/web",
+    "dev:api": "npm run dev -w apps/api",
+    "build": "npm run build -ws",
+    "lint": "npm run lint -ws",
+    "typecheck": "npm run typecheck -ws",
+    "db:migrate": "npm run db:migrate -w apps/api",
+    "db:generate": "npm run db:generate -w apps/api",
+    "db:seed": "npm run db:seed -w apps/api"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.2",
+    "node-fetch": "^3.3.2",
+    "prisma": "^6.19.2"
+  }
+}

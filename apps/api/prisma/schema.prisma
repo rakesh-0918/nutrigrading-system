@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String                    @id @default(cuid())
+  phone              String                    @unique
+  passwordHash       String
+  name               String
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  dailyIntake        DailyIntake[]
+  dailyLimits        DailyLimits[]
+  preferenceHistory  HealthPreferenceHistory[]
+  languagePreference LanguagePreference?
+  leaderboard        Leaderboard?
+  pointsHistory      PointsHistory[]
+  redFlags           RedFlags[]
+  scanHistory        ScanHistory[]
+  streakHistory      StreakHistory[]
+  profile            UserProfile?
+}
+
+model UserProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  age       Int
+  gender    Gender
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model HealthPreferenceHistory {
+  id            String           @id @default(cuid())
+  userId        String
+  preference    HealthPreference
+  effectiveFrom DateTime
+  createdAt     DateTime         @default(now())
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, effectiveFrom])
+}
+
+model DailyLimits {
+  id          String           @id @default(cuid())
+  userId      String
+  date        DateTime
+  sugarLimit  Float
+  fatLimit    Float
+  satFatLimit Float
+  saltLimit   Float
+  prefAtTime  HealthPreference
+  createdAt   DateTime         @default(now())
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([date])
+}
+
+model DailyIntake {
+  id            String   @id @default(cuid())
+  userId        String
+  date          DateTime
+  freeSugarG    Float    @default(0)
+  naturalSugarG Float    @default(0)
+  fatG          Float    @default(0)
+  satFatG       Float    @default(0)
+  saltG         Float    @default(0)
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model RedFlags {
+  id           String   @id @default(cuid())
+  userId       String
+  date         DateTime
+  redFatItems  Int      @default(0)
+  redSaltItems Int      @default(0)
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model StreakHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  date        DateTime
+  earned      Boolean  @default(false)
+  streakCount Int      @default(0)
+  endedReason String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model PointsHistory {
+  id        String          @id @default(cuid())
+  userId    String
+  type      PointsEventType
+  delta     Int
+  createdAt DateTime        @default(now())
+  meta      Json?
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Leaderboard {
+  userId    String   @id
+  points    Int      @default(0)
+  reachedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([points, reachedAt])
+}
+
+model ScanHistory {
+  id         String     @id @default(cuid())
+  userId     String
+  createdAt  DateTime   @default(now())
+  source     ScanSource
+  confidence Int
+  barcode    String?
+  kind       FoodKind
+  title      String?
+  raw        Json
+  consumed   Boolean    @default(false)
+  consumedAt DateTime?
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model LanguagePreference {
+  userId    String   @id
+  language  String
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum HealthPreference {
+  NORMAL
+  DIABETES_T1
+  DIABETES_T2
+  HIGH_BP
+  FAT_RELATED_OBESITY
+  DIABETES_OBESITY
+}
+
+enum ScanSource {
+  CAMERA
+  UPLOAD
+}
+
+enum FoodKind {
+  BEVERAGE
+  SOLID
+  FRUIT_VEG
+  NOT_FOOD
+  UNKNOWN
+}
+
+enum PointsEventType {
+  SCAN_FOOD
+  BALANCED_DAY
+  AVOID_RISKY_FOOD
+  CHOOSE_HEALTHIER_OPTION
+  REPEATED_EXCESS_SUGAR
+  REPEATED_RED_FAT_SALT
+}
